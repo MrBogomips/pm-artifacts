@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Guidance for agents working in the pm-artifacts plugin repository. This file is the project's
-only instruction file: do not add a `CLAUDE.md` (it would take precedence over this one).
+Guidance for agents working in the pm-artifacts plugin repository. `CLAUDE.md` is a symbolic
+link to this file, so every agent reads the same instructions: edit `AGENTS.md`, never replace the link.
 
 ## Purpose
 
