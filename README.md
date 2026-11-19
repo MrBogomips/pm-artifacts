@@ -26,9 +26,6 @@ claude plugin marketplace add MrBogomips/claude-plugins
 claude plugin install pm-artifacts@mrbogomips
 ```
 
-The repository is also a single-plugin marketplace of its own (`claude plugin marketplace add
-MrBogomips/pm-artifacts`, then `claude plugin install pm-artifacts@pm-artifacts`); use one or the other.
-
 ## Requirements
 
 - Claude Code with plugin support.
