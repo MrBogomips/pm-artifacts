@@ -35,7 +35,7 @@ shared/page/             pm.css (components), pm-core.js (i18n, Dark toggle, tab
 shared/scripts/          artifact_page.py (assembler), model_common.py (shared validation), extract_model.py (read back), theme_tokens.py (shipped)
 skills/<type>/           SKILL.md, references/model.md, scripts/<type with _>_model.py, assets/<type>.css and <type>[-*].js (shipped)
 samples/<type>/          the synthetic sample model of each type (not shipped)
-tests/                   structural tests, tests/py unit tests (not shipped)
+tests/                   structural tests, tests/py and tests/js unit tests (not shipped)
 .claude/skills/new-artifact/  development skill: add an artifact type (not shipped)
 _reference/              local reference material with client data (gitignored, never committed)
 ```
@@ -47,8 +47,9 @@ exposes `validate(model) -> errors` and may expose `warnings(model)`.
 ## Commands
 
 ```bash
-bash tests/run-structural-tests.sh    # manifests, themes, python unit tests, `claude plugin validate --strict` when claude is on PATH
-python3 -m unittest discover -s tests/py   # unit tests only
+bash tests/run-structural-tests.sh    # manifests, themes, python and js unit tests, `claude plugin validate --strict` when claude is on PATH
+python3 -m unittest discover -s tests/py   # Python unit tests only
+node --test tests/js/*.mjs                 # page-logic tests (estimation, planning), run in a vm
 python3 shared/scripts/artifact_page.py --type agile-board --model samples/agile-board/sample.board.json --out out/sample.html [--theme alt] [--standalone]
 python3 skills/agile-board/scripts/agile_board_model.py <file>.board.json   # validate a model
 python3 shared/scripts/extract_model.py <saved page> [--out <model>] [--against <model>]

@@ -65,21 +65,24 @@
       `<th class="pm-num">${V.unit()}</th><th></th><th class="pm-num">${t("st_risk")}</th></tr>${rows}</table></div></div>`;
   }
 
+  /* persons x sprints: load against capacity and the items themselves, plus what is outside sprints */
   function peopleView(m, ix, st) {
     const L = AB.loads(m);
-    const head = `<tr><th>${t("person")}</th>${m.sprints.map((s) => `<th>${esc(s.name)}<div class="pm-muted">${num(AB.sprintDays(s))} ${t("days")}</div></th>`).join("")}</tr>`;
+    const cols = m.sprints.concat([{ id: "", name: t("backlog") }]);
+    const head = `<tr><th>${t("person")}</th>${cols.map((s) => `<th>${esc(s.name)}${s.id ? `<div class="pm-muted">${PM.fmtDate(s.start)} · ${num(AB.sprintDays(s))} ${t("days")}</div>` : ""}</th>`).join("")}</tr>`;
     const cell = (pid, s, cap) => {
-      const load = (L[pid] || {})[s.id] || 0;
-      const n = m.items.filter((it) => it.sprint === s.id && (it.assignee || "") === pid).length;
-      return `<td class="ab-cell" data-cell="${esc(pid)}|${esc(s.id)}" tabindex="0">${V.meter(load, cap)}<div class="pm-muted">${n} ${t("items")}</div></td>`;
+      const inCell = (it) => (s.id && it._spans && it._spans.length ? it._spans.includes(s.id) : (it.sprint || "") === s.id);
+      const its = m.items.filter((it) => inCell(it) && (it.assignee || "") === pid && V.match(it, ix, st));
+      const load = s.id ? (L[pid] || {})[s.id] || 0 : its.reduce((a, it) => a + AB.est(it), 0);
+      return `<td class="ab-cell"${s.id ? ` data-cell="${esc(pid)}|${esc(s.id)}"` : ""}>${s.id ? V.meter(load, cap) : (its.length ? `<div class="pm-muted">${num(load)} ${V.unit()}</div>` : "")}` +
+        `${its.map((it) => V.chip(it, ix, s.id && it.sprint !== s.id)).join("")}</td>`;
     };
     const people = (m.people || []).filter((p) => !st.person || st.person === p.id);
     const rows = people.map((p) => `<tr><th class="ab-person">${esc(p.name)}<div class="pm-muted">${esc(p.role || "")}${p.availability != null && p.availability !== 1 ? ` · ${Math.round(p.availability * 100)}%` : ""}</div></th>` +
-      m.sprints.map((s) => cell(p.id, s, AB.capacity(m, p, s))).join("") + "</tr>").join("");
-    const none = (!st.person || st.person === "_none") ? `<tr><th class="ab-person">${t("unassigned")}</th>${m.sprints.map((s) => cell("", s, null)).join("")}</tr>` : "";
-    const backlog = m.items.filter((it) => !it.sprint);
+      cols.map((s) => cell(p.id, s, s.id ? AB.capacity(m, p, s) : null)).join("") + "</tr>").join("");
+    const none = (!st.person || st.person === "_none") ? `<tr><th class="ab-person">${t("unassigned")}</th>${cols.map((s) => cell("", s, null)).join("")}</tr>` : "";
     return `<div class="pm-panel pm-scroll"><table class="pm-table ab-alloc">${head}${rows}${none}</table></div>` +
-      `<p class="pm-muted">${t("allocNote", { n: backlog.length })}</p>`;
+      `<p class="pm-muted">${t("allocNote", { n: m.items.filter((it) => !it.sprint).length })}</p>`;
   }
 
   window.ABV = Object.assign(window.ABV, { progressView, peopleView });

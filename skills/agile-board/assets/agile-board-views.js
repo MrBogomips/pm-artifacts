@@ -21,40 +21,61 @@
     return `<div class="ab-load${load > cap ? " over" : ""}"><span>${num(load)} / ${num(cap)} ${unit()}</span><div class="pm-meter${load > cap ? " over" : ""}"><i style="width:${pct}%"></i></div></div>`;
   };
 
+  const estLabel = (it) => (it.estimate == null ? "?" : (it._est && it._est.source === "rule" ? "≈" : "") + num(it.estimate));
+
   function card(it, ix, st) {
     const p = ix.people[it.assignee];
-    return `<div class="ab-card" data-id="${esc(it.id)}" style="--c:${ix.color(ix.epics[it.epic])}"${st.editing ? ' draggable="true"' : ""} tabindex="0">` +
+    return `<div class="ab-card${it._beyond ? " beyond" : ""}" data-id="${esc(it.id)}" style="--c:${ix.color(ix.epics[it.epic])}"${st.editing ? ' draggable="true"' : ""} tabindex="0">` +
       `<div class="ab-card-t">${esc(it.id)} ${esc(it.title)}</div><div class="ab-card-m">` +
       `<span class="pm-tag">${esc(t("ty_" + (it.type || "story")))}</span>${status(it.status)}` +
-      `<span>${it.estimate == null ? "?" : num(it.estimate)} ${unit()}</span>${p ? `<span class="ab-who">${esc(p.name)}</span>` : ""}` +
-      `${it.release ? `<span class="pm-tag" style="--c:var(--neutral)">${esc((ix.releases[it.release] || {}).name || it.release)}</span>` : ""}</div></div>`;
+      `<span>${estLabel(it)} ${unit()}</span>${p ? `<span class="ab-who">${esc(p.name)}</span>` : ""}` +
+      `${it.release ? `<span class="pm-tag" style="--c:var(--neutral)">${esc((ix.releases[it.release] || {}).name || it.release)}</span>` : ""}` +
+      `${it.pinned && st.auto ? `<span class="pm-tag" style="--c:var(--accent)">${esc(t("plPinned"))}</span>` : ""}</div></div>`;
   }
 
-  function column(id, head, sub, metre, items, ix, st, note) {
+  /* compact card for the people grid */
+  function chip(it, ix, continued) {
+    return `<div class="ab-mini${continued ? " cont" : ""}" data-id="${esc(it.id)}" style="--c:${ix.color(ix.epics[it.epic])}" tabindex="0" title="${esc(it.title)}">` +
+      `${continued ? "↪ " : ""}<b>${esc(it.id)}</b> ${esc(it.title)} <span class="pm-muted">${estLabel(it)}</span></div>`;
+  }
+
+  /* one row per person in a sprint column: load against capacity */
+  function teamRows(m, s, L) {
+    if (!(m.people || []).length) return "";
+    const rows = m.people.map((p) => {
+      const load = (L[p.id] || {})[s.id] || 0, cap = AB.capacity(m, p, s);
+      const over = cap != null && load > cap + 0.01, pct = cap ? Math.min(100, (load / cap) * 100) : (load ? 100 : 0);
+      return `<span class="ab-cap-n">${esc(p.name)}</span><span class="pm-meter${over ? " over" : ""}"><i style="width:${pct}%"></i></span>` +
+        `<span class="ab-cap-v${over ? " over" : ""}">${num(load)}${cap != null ? "/" + num(cap) : ""}</span>`;
+    }).join("");
+    return `<details class="ab-cap" open><summary>${t("teamLoad")}</summary><div class="ab-cap-g">${rows}</div></details>`;
+  }
+
+  function column(id, head, sub, metre, items, ix, st, note, team) {
     const groups = {};
     items.forEach((it) => (groups[it.epic] = groups[it.epic] || []).push(it));
     const body = Object.keys(groups).map((eid) => {
       const e = ix.epics[eid];
       return `<div class="ab-grp">${esc(e ? e.title : eid)} · ${groups[eid].length}</div>` + groups[eid].map((it) => card(it, ix, st)).join("");
     }).join("");
-    return `<section class="ab-col" data-drop="${esc(id)}"><h3>${esc(head)} · ${items.length}</h3><div class="pm-muted">${sub}</div>${metre}` +
+    return `<section class="ab-col" data-drop="${esc(id)}"><h3>${esc(head)} · ${items.length}</h3><div class="pm-muted">${sub}</div>${metre}${team || ""}` +
       `${body || `<div class="pm-empty">${esc(note || t("emptyCol"))}</div>`}</section>`;
   }
 
   function sprintView(m, ix, st) {
-    const totals = AB.sprintTotals(m);
+    const totals = AB.sprintTotals(m), L = AB.loads(m);
     const cols = totals.map(({ sprint: s, load, cap }) => column(s.id, s.name,
       `${PM.fmtDate(s.start)} – ${PM.fmtDate(s.end)} · ${num(AB.sprintDays(s))} ${t("days")}${s.note ? " · " + esc(s.note) : ""}`,
-      meter(load, cap), m.items.filter((it) => it.sprint === s.id && match(it, ix, st)), ix, st));
+      meter(load, cap), m.items.filter((it) => it.sprint === s.id && match(it, ix, st)), ix, st, null, teamRows(m, s, L)));
     const back = m.items.filter((it) => !it.sprint && match(it, ix, st));
-    cols.push(column("", t("backlog"), esc(t("backlogSub")), "", back, ix, st, t("emptyBacklog")));
+    cols.push(column("", t("backlog"), esc(st.auto ? t("backlogAuto") : t("backlogSub")), "", back, ix, st, t("emptyBacklog")));
     return `<div class="ab-cols" style="--n:${cols.length}">${cols.join("")}</div>`;
   }
 
   function itemRows(items, ix) {
     return items.map((it) => `<tr data-id="${esc(it.id)}"><td>${esc(it.id)}</td><td>${esc(it.title)}</td><td>${esc(t("ty_" + (it.type || "story")))}</td>` +
-      `<td>${status(it.status)}</td><td class="pm-num">${it.estimate == null ? "?" : num(it.estimate)}</td>` +
-      `<td>${esc((ix.sprints[it.sprint] || {}).name || "—")}</td><td>${esc((ix.people[it.assignee] || {}).name || "—")}</td></tr>`).join("");
+      `<td>${status(it.status)}</td><td class="pm-num">${estLabel(it)}</td>` +
+      `<td>${esc((ix.sprints[it.sprint] || {}).name || (it._beyond ? t("beyond") : "—"))}</td><td>${esc((ix.people[it.assignee] || {}).name || "—")}</td></tr>`).join("");
   }
   const itemHead = () => `<tr><th></th><th>${t("title")}</th><th>${t("type")}</th><th>${t("status")}</th><th class="pm-num">${unit()}</th><th>${t("sprint")}</th><th>${t("assignee")}</th></tr>`;
 
@@ -97,5 +118,5 @@
     return `<div class="pm-panel pm-scroll"><div class="ab-tl"><div></div><div class="ab-tl-track ab-tl-head">${head}</div>${rows}<div class="ab-tl-marks" aria-hidden="true">${marks}</div></div></div>`;
   }
 
-  window.ABV = { match, card, meter, status, unit, sprintView, epicsView, roadmapView, itemRows, itemHead };
+  window.ABV = { match, card, chip, estLabel, meter, status, unit, sprintView, epicsView, roadmapView, itemRows, itemHead };
 })();

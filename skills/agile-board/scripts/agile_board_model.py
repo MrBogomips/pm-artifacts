@@ -23,6 +23,8 @@ import model_common as mc  # noqa: E402
 TYPES = ("story", "task", "bug", "spike")
 STATUSES = ("todo", "active", "done", "risk", "blocked")
 UNITS = ("gg", "pt")
+PLANNING = ("manual", "auto")
+RULE_PER = ("item", "size")
 
 
 def _meta(model: Dict[str, Any], errors: List[str]) -> None:
@@ -33,6 +35,9 @@ def _meta(model: Dict[str, Any], errors: List[str]) -> None:
     mc.text(meta, "title", "meta", errors, required=True)
     mc.enum(meta, "lang", mc.LANGS, "meta", errors)
     mc.enum(meta, "unit", UNITS, "meta", errors)
+    mc.enum(meta, "planning", PLANNING, "meta", errors)
+    if meta.get("planning") == "auto" and (meta.get("unit") or "gg") != "gg":
+        errors.append("meta: \"planning\" auto needs \"unit\" gg (capacity in working days)")
     mc.date(meta, "today", "meta", errors)
     mc.texts(meta, ("project",), "meta", errors)
     link = meta.get("sourceLink")
@@ -76,6 +81,27 @@ def _people(people: List[Dict[str, Any]], sprint_ids: set, errors: List[str]) ->
             mc.number({"v": cap}, "v", "%s: sprintCapacity.%s" % (loc, sid), errors)
 
 
+def _rules(model: Dict[str, Any], errors: List[str]) -> set:
+    est = model.get("estimation")
+    if est is None:
+        return set()
+    if not isinstance(est, dict):
+        errors.append("\"estimation\" must be an object with \"rules\"")
+        return set()
+    rules = mc.collection(est, "rules", errors)
+    ids = mc.unique_ids("estimation.rules", rules, errors)
+    for i, r in enumerate(rules):
+        loc = mc.where("estimation.rules", r, i)
+        mc.text(r, "label", loc, errors, required=True)
+        if r.get("per") not in RULE_PER:
+            errors.append("%s: \"per\" must be one of %s, got %r" % (loc, ", ".join(RULE_PER), r.get("per")))
+        if r.get("value") is None:
+            errors.append("%s: \"value\" is required" % loc)
+        for f in ("value", "floor", "min", "max", "step"):
+            mc.number(r, f, loc, errors)
+    return ids
+
+
 def _items(model: Dict[str, Any], ids: Dict[str, set], errors: List[str]) -> None:
     for i, it in enumerate(model["_items"]):
         loc = mc.where("items", it, i)
@@ -91,6 +117,11 @@ def _items(model: Dict[str, Any], ids: Dict[str, set], errors: List[str]) -> Non
         mc.enum(it, "type", TYPES, loc, errors)
         mc.enum(it, "status", STATUSES, loc, errors)
         mc.number(it, "estimate", loc, errors)
+        mc.number(it, "size", loc, errors)
+        mc.ref(it, "kind", ids["rules"], "rule", loc, errors)
+        mc.ref(it, "notBefore", ids["sprints"], "sprint", loc, errors)
+        if it.get("pinned") is not None and not isinstance(it.get("pinned"), bool):
+            errors.append("%s: \"pinned\" must be true or false" % loc)
 
 
 def _collect(model: Dict[str, Any], errors: List[str]) -> Dict[str, set]:
@@ -114,6 +145,8 @@ def validate(model: Any) -> List[str]:
         mc.text(r, "name", mc.where("releases", r, i), errors, required=True)
         mc.date(r, "date", mc.where("releases", r, i), errors)
         mc.texts(r, ("desc",), mc.where("releases", r, i), errors)
+        mc.ref(r, "notBefore", ids["sprints"], "sprint", mc.where("releases", r, i), errors)
+    ids["rules"] = _rules(work, errors)
     _sprints(work["_sprints"], errors)
     _people(work["_people"], ids["sprints"], errors)
     for i, a in enumerate(work["_areas"]):
@@ -166,15 +199,31 @@ def capacities(model: Dict[str, Any]) -> Dict[str, Dict[str, Optional[float]]]:
     return out
 
 
+def effective_estimate(model: Dict[str, Any], it: Dict[str, Any]) -> Optional[float]:
+    """The estimate the page uses: explicit, else the item's rule (kind, else type), else None."""
+    if it.get("estimate") is not None:
+        return it["estimate"]
+    rules = {r["id"]: r for r in (model.get("estimation") or {}).get("rules") or []}
+    rule = rules.get(it.get("kind") or it.get("type") or "story")
+    if not rule:
+        return None
+    if rule["per"] == "size":
+        if it.get("size") is None:
+            return None
+        return max(rule.get("floor") or 0, round(it["size"] * rule["value"], 2))
+    return rule["value"]
+
+
 def _over_allocation(model: Dict[str, Any]) -> List[str]:
     caps = capacities(model)
     names = {p["id"]: p["name"] for p in model.get("people") or []}
     sprint_name = {s["id"]: s["name"] for s in model["sprints"]}
     load: Dict[tuple, float] = {}
     for it in model["items"]:
-        if it.get("assignee") and it.get("sprint") and it.get("estimate") is not None:
+        est = effective_estimate(model, it)
+        if it.get("assignee") and it.get("sprint") and est is not None:
             key = (it["assignee"], it["sprint"])
-            load[key] = load.get(key, 0) + it["estimate"]
+            load[key] = load.get(key, 0) + est
     out = []
     for (pid, sid), value in sorted(load.items()):
         cap = caps.get(pid, {}).get(sid)
@@ -216,8 +265,11 @@ def _release_slips(model: Dict[str, Any]) -> List[str]:
 
 def warnings(model: Dict[str, Any]) -> List[str]:
     """Planning findings of a valid model, for the PM to decide on."""
-    out = _over_allocation(model) + _dependencies(model) + _release_slips(model)
-    missing = [it["id"] for it in model["items"] if it.get("estimate") is None and it.get("status") != "done"]
+    if (model.get("meta") or {}).get("planning") == "auto":
+        out = ["auto planning: sprints, load, over-allocation and release fit are computed on the page"]
+    else:
+        out = _over_allocation(model) + _dependencies(model) + _release_slips(model)
+    missing = [it["id"] for it in model["items"] if effective_estimate(model, it) is None and it.get("status") != "done"]
     if missing:
         out.append("%d item(s) without an estimate: %s" % (len(missing), ", ".join(missing)))
     return out

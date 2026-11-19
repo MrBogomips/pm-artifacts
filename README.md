@@ -17,7 +17,7 @@ the next session reads the changes back.
 
 | Skill | What it produces |
 |---|---|
-| [`agile-board`](skills/agile-board/SKILL.md) | Agile board: sprints with load against capacity, epics and stories, roadmap with releases, progress with burn-up and release fit, people allocation per sprint |
+| [`agile-board`](skills/agile-board/SKILL.md) | Agile board: sprints with load against capacity and team allocation, epics and stories, roadmap with releases, progress with burn-up and release fit, people allocation per sprint, estimation sliders with automatic re-planning |
 
 ## Install
 
@@ -60,5 +60,5 @@ with every token kept, passed by path.
 ## Development
 
 ```
-bash tests/run-structural-tests.sh
+bash tests/run-structural-tests.sh   # needs python3 and jq; node runs the page-logic tests when installed
 ```

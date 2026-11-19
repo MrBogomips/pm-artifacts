@@ -32,6 +32,11 @@ def model(**changes):
     return m
 
 
+def manual(**changes):
+    """The sample with manual planning: the validator computes the schedule findings itself."""
+    return model(_manual=lambda m: m["meta"].update(planning="manual"), **changes)
+
+
 def item(m, ident):
     return next(i for i in m["items"] if i["id"] == ident)
 
@@ -131,6 +136,25 @@ class Errors(unittest.TestCase):
     def test_free_text_must_be_text(self):
         self.assertError(model(a=lambda m: item(m, "1.1").update(desc=5)), "\"desc\"")
 
+    def test_bad_planning(self):
+        self.assertError(model(a=lambda m: m["meta"].update(planning="later")), "\"planning\"")
+
+    def test_auto_planning_needs_days(self):
+        self.assertError(model(a=lambda m: m["meta"].update(planning="auto", unit="pt")), "auto")
+
+    def test_bad_rule(self):
+        self.assertError(model(a=lambda m: m.update(estimation={"rules": [{"id": "r", "label": "R", "per": "hour", "value": 1}]})), "\"per\"")
+        self.assertError(model(a=lambda m: m.update(estimation={"rules": [{"id": "r", "label": "R", "per": "item"}]})), "\"value\"")
+
+    def test_unknown_kind(self):
+        self.assertError(model(a=lambda m: item(m, "1.1").update(kind="nope")), "rule \"nope\"")
+
+    def test_bad_size_pinned_not_before(self):
+        self.assertError(model(a=lambda m: item(m, "1.1").update(size=-2)), "\"size\"")
+        self.assertError(model(a=lambda m: item(m, "1.1").update(pinned="yes")), "\"pinned\"")
+        self.assertError(model(a=lambda m: item(m, "1.1").update(notBefore="S9")), "sprint \"S9\"")
+        self.assertError(model(a=lambda m: m["releases"][0].update(notBefore="S9")), "sprint \"S9\"")
+
     def test_sprints_required(self):
         self.assertError(model(a=lambda m: m.update(sprints=[])), "\"sprints\"")
 
@@ -143,22 +167,34 @@ class Warnings(unittest.TestCase):
 
     def test_over_allocation(self):
         # Giorgio Rizzo has 3 days in Sprint 3 and an 8-day item there
-        self.assertWarning(BASE, "Giorgio Rizzo")
+        self.assertWarning(manual(), "Giorgio Rizzo")
 
     def test_missing_estimates(self):
-        self.assertWarning(BASE, "without an estimate")
+        self.assertWarning(manual(a=lambda m: item(m, "2.4").pop("size")), "without an estimate")
 
     def test_dependency_planned_later(self):
-        self.assertWarning(model(a=lambda m: item(m, "1.1").update(sprint="S4")), "depends on 1.1")
+        self.assertWarning(manual(a=lambda m: item(m, "1.1").update(sprint="S4")), "depends on 1.1")
 
     def test_release_slip(self):
-        self.assertWarning(model(a=lambda m: item(m, "1.3").update(sprint="S4")), "of release R1 are planned in Sprint 4")
+        self.assertWarning(manual(a=lambda m: item(m, "1.3").update(sprint="S4")), "of release R1 are planned in Sprint 4")
 
     def test_null_availability_and_unit_mean_defaults(self):
-        m = model(a=lambda m: m["people"][0].update(availability=None), b=lambda m: m["meta"].update(unit=None))
+        m = manual(a=lambda m: m["people"][0].update(availability=None), b=lambda m: m["meta"].update(unit=None))
         self.assertEqual(V.validate(m), [])
         self.assertEqual(V.capacities(m)["lf"]["S1"], 10)
         self.assertTrue(any("Giorgio Rizzo" in w for w in V.warnings(m)))
+
+    def test_rule_estimates_count_as_estimates(self):
+        m = manual(a=lambda m: m.update(estimation={"rules": [{"id": "story", "label": "S", "per": "size", "value": 0.5, "floor": 1}]}),
+                   b=lambda m: item(m, "2.4").update(size=4))
+        self.assertEqual(V.effective_estimate(m, item(m, "2.4")), 2)
+        self.assertFalse(any("2.4" in w and "estimate" in w for w in V.warnings(m)))
+
+    def test_auto_planning_skips_schedule_findings(self):
+        m = model(a=lambda m: m["meta"].update(planning="auto"))
+        found = V.warnings(m)
+        self.assertFalse(any("over capacity" in w for w in found))
+        self.assertTrue(any("computed on the page" in w for w in found))
 
     def test_capacity_from_days_and_availability(self):
         caps = V.capacities(BASE)

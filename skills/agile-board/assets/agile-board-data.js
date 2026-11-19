@@ -34,8 +34,9 @@
 
   const est = (it) => (it.estimate == null ? 0 : it.estimate);
 
-  /* load[personId|""][sprintId] = sum of estimates; "" is the unassigned row. */
+  /* load[personId|""][sprintId] = sum of estimates, or the plan's distribution; "" is the unassigned row. */
   function loads(m) {
+    if (m._plan) return m._plan.used;   /* an effective model carries its plan (agile-board-plan.js) */
     const out = { "": {} };
     (m.people || []).forEach((p) => { out[p.id] = {}; });
     m.items.forEach((it) => {
