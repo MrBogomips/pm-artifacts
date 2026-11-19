@@ -1,19 +1,16 @@
 #!/usr/bin/env bash
-# Manifest validity and version sync: plugin.json is the source of truth; marketplace.json has
-# exactly one entry, source "./", same name and version.
+# Manifest validity: plugin.json is the only manifest, with name, version (MAJOR.MINOR.PATCH),
+# description, license and author. The plugin is distributed only through the mrbogomips
+# marketplace (MrBogomips/claude-plugins), so the repository must not publish a marketplace.json.
 set -u
 . "$(dirname "$0")/lib.sh"
 need jq
 
 PLUGIN="${1:-$ROOT/.claude-plugin/plugin.json}"
-MARKET="${2:-$ROOT/.claude-plugin/marketplace.json}"
 P="${PLUGIN#"$ROOT"/}"
-M="${MARKET#"$ROOT"/}"
 
-for f in "$PLUGIN" "$MARKET"; do
-    [ -f "$f" ] || { fail "${f#"$ROOT"/}" "missing"; finish validate-manifests; }
-    jq -e . "$f" >/dev/null 2>&1 || { fail "${f#"$ROOT"/}" "not valid JSON"; finish validate-manifests; }
-done
+[ -f "$PLUGIN" ] || { fail "$P" "missing"; finish validate-manifests; }
+jq -e . "$PLUGIN" >/dev/null 2>&1 || { fail "$P" "not valid JSON"; finish validate-manifests; }
 
 for field in name version description license; do
     v=$(jq -r --arg f "$field" '.[$f] // "" | if type=="string" then . else "" end' "$PLUGIN")
@@ -26,16 +23,7 @@ pver=$(jq -r '.version // ""' "$PLUGIN")
 printf '%s' "$pver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
     || fail "$P" "version \"$pver\" is not MAJOR.MINOR.PATCH"
 
-count=$(jq '.plugins | length' "$MARKET")
-[ "$count" = "1" ] || fail "$M" "must list exactly one plugin, found $count"
-
-pname=$(jq -r '.name // ""' "$PLUGIN")
-mname=$(jq -r '.plugins[0].name // ""' "$MARKET")
-msrc=$(jq -r '.plugins[0].source // ""' "$MARKET")
-mver=$(jq -r '.plugins[0].version // ""' "$MARKET")
-
-[ "$mname" = "$pname" ] || fail "$M" "entry name \"$mname\" differs from plugin.json name \"$pname\""
-[ "$msrc" = "./" ] || fail "$M" "entry source is \"$msrc\", expected \"./\""
-[ "$mver" = "$pver" ] || fail "$M" "version mismatch: marketplace \"$mver\" vs plugin.json \"$pver\""
+[ ! -e "$ROOT/.claude-plugin/marketplace.json" ] \
+    || fail ".claude-plugin/marketplace.json" "must not exist: the plugin is listed only in the mrbogomips marketplace"
 
 finish validate-manifests

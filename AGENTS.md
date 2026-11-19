@@ -1,6 +1,7 @@
-# CLAUDE.md
+# AGENTS.md
 
-Guidance for working in the pm-artifacts plugin repository.
+Guidance for agents working in the pm-artifacts plugin repository. This file is the project's
+only instruction file: do not add a `CLAUDE.md` (it would take precedence over this one).
 
 ## Purpose
 
@@ -9,6 +10,12 @@ reports for project managers, as self-contained pages built to be published as c
 and to use their runtime capabilities. The sibling of `eng-artifacts` (software engineering
 diagrams): same theme tokens, simpler development workflow. Pages are tables, timelines and meters
 more than drawings.
+
+## Distribution
+
+The plugin is listed only in the `mrbogomips` marketplace (`MrBogomips/claude-plugins`), which
+reads the version from `plugin.json`. The repository publishes no marketplace of its own, so users
+never see the plugin twice; `tests/validate-manifests.sh` checks that it stays that way.
 
 ## Product rules
 
@@ -29,7 +36,7 @@ more than drawings.
 ## Layout
 
 ```
-.claude-plugin/          plugin.json (source of truth for the version) + one-entry marketplace.json (shipped)
+.claude-plugin/          plugin.json, the only manifest (shipped)
 shared/themes/           default.css, alt.css (shipped)
 shared/page/             pm.css (components), pm-core.js (i18n, Dark toggle, tabs, drawer, tiles), pm-save.js (edit and save) (shipped)
 shared/scripts/          artifact_page.py (assembler), model_common.py (shared validation), extract_model.py (read back), theme_tokens.py (shipped)
@@ -69,7 +76,7 @@ No OpenSpec, no agent harness, no exploration sketches, no A/B evaluations. For 
    browser (views, light and dark, 390px width, console clean), publish it as a private artifact
    for the user, who approves (two rounds at most).
 5. Review the code (`pr-review-toolkit:code-reviewer`) and the SKILL.md for context cost
-   (`skill-creator`), then PR, merge, minor version bump in both manifests.
+   (`skill-creator`), then PR, merge, minor version bump in `plugin.json`.
 
 A change to an existing type follows steps 3 to 5.
 

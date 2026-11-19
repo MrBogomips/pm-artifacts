@@ -29,9 +29,8 @@ for script in "$TESTS_DIR"/validate-*.sh "$TESTS_DIR"/test-*.sh; do
     run "$(basename "$script")" bash "$script"
 done
 
-# `claude plugin validate --strict` on the plugin as installed: a copy of the repository without the
-# development files. Validated in place, the repository's own CLAUDE.md (development guidance, not
-# shipped) is reported as a warning, which --strict turns into a failure.
+# `claude plugin validate --strict` on the plugin as installed: a copy of the repository with only the
+# shipped entries, leaving out the development files (AGENTS.md, DoD.md, tests, samples, .claude).
 validate_plugin() {
     local stage rc entry
     stage=$(mktemp -d "${TMPDIR:-/tmp}/pm-artifacts-plugin.XXXXXX") || return 1

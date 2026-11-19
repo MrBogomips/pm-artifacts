@@ -56,4 +56,4 @@ approve. Two rounds of fixes at most.
 ## 5. Finish
 
 Code review (`pr-review-toolkit:code-reviewer`), SKILL.md review for context cost (`skill-creator`),
-bump the minor version in `plugin.json` and `marketplace.json`, PR referencing the issue, merge.
+bump the minor version in `plugin.json`, PR referencing the issue, merge.
