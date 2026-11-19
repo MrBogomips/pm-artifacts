@@ -1,6 +1,6 @@
 {
   "name": "pm-artifacts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Skills that turn a project plan into decision boards for project managers: an agile board with sprints, roadmap, progress, epics, stories and allocations, as a self-contained page that the PM can edit and save when published as an artifact, with a light/dark toggle and the theme tokens of eng-artifacts.",
   "author": {
     "name": "MrBogomips",

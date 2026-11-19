@@ -34,8 +34,9 @@
 
   const est = (it) => (it.estimate == null ? 0 : it.estimate);
 
-  /* load[personId|""][sprintId] = sum of estimates; "" is the unassigned row. */
+  /* load[personId|""][sprintId] = sum of estimates, or the plan's distribution; "" is the unassigned row. */
   function loads(m) {
+    if (m._plan) return m._plan.used;   /* an effective model carries its plan (agile-board-plan.js) */
     const out = { "": {} };
     (m.people || []).forEach((p) => { out[p.id] = {}; });
     m.items.forEach((it) => {
@@ -76,10 +77,13 @@
     const inTime = rel.date ? m.sprints.filter((s) => s.end <= rel.date) : m.sprints;
     const totals = sprintTotals(m);
     const cap = totals.filter((t) => inTime.includes(t.sprint)).reduce((a, t) => (t.cap == null || a == null ? null : a + t.cap), 0);
-    const late = items.filter((it) => it.sprint && rel.date && ix.sprints[it.sprint].end > rel.date);
+    const last = (it) => ix.sprints[lastOf(it)] || ix.sprints[it.sprint];
+    const late = items.filter((it) => it.sprint && rel.date && last(it).end > rel.date);
     const unplanned = items.filter((it) => !it.sprint);
     return { rel, items, p, cap, late, unplanned, fits: late.length === 0 && unplanned.length === 0 && (cap == null || p.est <= cap) };
   }
+
+  const lastOf = (it) => (window.AB.lastSprint ? window.AB.lastSprint(it) : it.sprint);
 
   function findings(m) {
     const ix = index(m), out = [], t = PM.t, L = loads(m), slips = {};
@@ -92,13 +96,15 @@
       if (mine == null) return;
       (it.deps || []).forEach((d) => {
         const dep = ix.items[d];
-        const theirs = dep ? ix.sprintOrder[dep.sprint] : undefined;
+        if (dep && dep.status === "done") return;
+        const theirs = dep ? ix.sprintOrder[lastOf(dep)] : undefined;
         if (theirs == null || theirs > mine) out.push({ kind: "dep", text: t(theirs == null ? "fDepNone" : "fDepLate", { a: it.id, b: d }), item: it.id });
       });
       const r = ix.releases[it.release];
-      if (r && r.date && ix.sprints[it.sprint].end > r.date) {
-        const key = r.id + "|" + it.sprint;
-        (slips[key] = slips[key] || { rel: r, sprint: ix.sprints[it.sprint], ids: [] }).ids.push(it.id);
+      const endS = ix.sprints[lastOf(it)] || ix.sprints[it.sprint];
+      if (r && r.date && endS.end > r.date) {
+        const key = r.id + "|" + endS.id;
+        (slips[key] = slips[key] || { rel: r, sprint: endS, ids: [] }).ids.push(it.id);
       }
     });
     Object.values(slips).forEach((g) => out.push({ kind: "slip", text: t("fSlip", { n: g.ids.length, ids: g.ids.join(", "), sprint: g.sprint.name, rel: g.rel.name }) }));

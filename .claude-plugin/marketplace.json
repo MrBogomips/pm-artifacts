@@ -12,7 +12,7 @@
       "name": "pm-artifacts",
       "source": "./",
       "description": "Decision boards for project managers (an agile board with sprints, roadmap, progress, epics, stories and allocations so far) as self-contained pages, editable once published as an artifact.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "productivity",
       "tags": [
         "project-management",

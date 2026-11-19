@@ -1,6 +1,6 @@
 ---
 name: agile-board
-description: "Build an agile planning board for a project manager as one self-contained page: sprints with load against capacity, epics and stories, a roadmap timeline with releases, progress with burn-up and release fit, and people allocation per sprint, with findings to decide on (over-allocation, late dependencies, release slips, missing estimates). Published as a claude.ai artifact, the PM can drag stories between sprints, change assignee, status and estimates, and save. Use when the user asks for an agile board, a sprint plan or sprint board, a release plan, a roadmap of epics, a team allocation or capacity view, or wants to see or review a backlog, a set of epics and stories, or a plan being prepared for Jira. Also use to change a board made earlier, or to read back what the PM changed on the published page."
+description: "Build an agile planning board for a project manager as one self-contained page: sprints with load against capacity and the team's allocation, epics and stories, a roadmap timeline with releases, progress with burn-up and release fit, people allocation per sprint, estimation assumptions as sliders (per item type, per acceptance scenario) with automatic re-planning over the sprints, with findings to decide on (over-allocation, late dependencies, release slips, missing estimates). Published as a claude.ai artifact, the PM can drag stories between sprints, change assignee, status and estimates, and save. Use when the user asks for an agile board, a sprint plan or sprint board, a release plan, a roadmap of epics, a team allocation or capacity view, or wants to see or review a backlog, a set of epics and stories, or a plan being prepared for Jira. Also use to change a board made earlier, or to read back what the PM changed on the published page."
 ---
 
 # Agile board
@@ -20,9 +20,13 @@ items for an audience.
 4. **Write the model** `<name>.board.json`, the only file you write by hand.
    - Take epics, stories, releases, sprints and people from the user's sources (an epics file, a
      backlog, a Jira export, a description). Keep their ids and titles; put requirement ids in `reqs`.
-   - In an analysis phase estimates are often missing: leave `estimate` out rather than invent one,
-     and leave `sprint` out for what is not planned yet. Never invent people, dates or capacities;
-     ask, or leave them out (the page shows what is unknown).
+   - In an analysis phase estimates are often missing: leave `estimate` out rather than invent one.
+     When the sources give a sizing driver (acceptance scenarios, screens), put it in `size` and add
+     an estimation rule per item type; state the rule values as assumptions in `meta.notes`, since the
+     PM will tune them with the sliders.
+   - Planning: `auto` when the user wants to see how the work spreads over the team's capacity (each
+     item needs an assignee); `manual` when the sprints are already decided. Never invent people,
+     dates or capacities; ask, or leave them out (the page shows what is unknown).
    - Use `meta.lang` `en` only when the user writes in English or asks for it.
 5. **Produce the page** (theme `default` unless the user names `alt` or a theme file):
    ```

@@ -7,8 +7,10 @@
   "unit": "gg",
   "sourceLink": "https://example.org/backlog",
   "notes": [
-   "Esempio sintetico: persone, date e stime sono inventate."
-  ]
+   "Esempio sintetico: persone, date e stime sono inventate.",
+   "Le storie da fare sono stimate dagli scenari di accettazione; muovi gli slider per vedere come cambia il piano."
+  ],
+  "planning": "auto"
  },
  "releases": [
   {
@@ -21,7 +23,8 @@
    "id": "R2",
    "name": "R2",
    "date": "2027-01-29",
-   "desc": "Reportistica e lista d'attesa"
+   "desc": "Reportistica e lista d'attesa",
+   "notBefore": "S3"
   }
  ],
  "sprints": [
@@ -210,7 +213,6 @@
    "epic": "E2",
    "type": "story",
    "title": "Annullare o spostare una prenotazione",
-   "estimate": 5,
    "status": "todo",
    "sprint": "S2",
    "release": "R1",
@@ -218,14 +220,14 @@
    "deps": [
     "2.1"
    ],
-   "reqs": "PRE-011"
+   "reqs": "PRE-011",
+   "size": 8
   },
   {
    "id": "2.3",
    "epic": "E2",
    "type": "story",
    "title": "Prenotazioni ricorrenti settimanali",
-   "estimate": 8,
    "status": "risk",
    "sprint": "S3",
    "release": "R1",
@@ -234,19 +236,20 @@
     "2.1"
    ],
    "reqs": "PRE-012",
-   "desc": "Regole di ricorrenza ancora da chiarire con l'ufficio sedi."
+   "desc": "Regole di ricorrenza ancora da chiarire con l'ufficio sedi.",
+   "size": 14
   },
   {
    "id": "2.4",
    "epic": "E2",
    "type": "story",
    "title": "Lista d'attesa su sala occupata",
-   "estimate": null,
    "status": "todo",
    "sprint": null,
    "release": "R2",
-   "assignee": null,
-   "reqs": "PRE-013"
+   "assignee": "lf",
+   "reqs": "PRE-013",
+   "size": 10
   },
   {
    "id": "3.1",
@@ -280,7 +283,6 @@
    "epic": "E3",
    "type": "task",
    "title": "Verificare il tracciato dell'anagrafica dipendenti",
-   "estimate": null,
    "status": "blocked",
    "sprint": "S2",
    "release": "R1",
@@ -292,7 +294,6 @@
    "epic": "E4",
    "type": "story",
    "title": "Notifica di conferma prenotazione",
-   "estimate": 3,
    "status": "todo",
    "sprint": "S3",
    "release": "R1",
@@ -300,14 +301,15 @@
    "deps": [
     "2.1"
    ],
-   "reqs": "NOT-001"
+   "reqs": "NOT-001",
+   "size": 5,
+   "pinned": true
   },
   {
    "id": "4.2",
    "epic": "E4",
    "type": "story",
    "title": "Promemoria il giorno prima",
-   "estimate": 2,
    "status": "todo",
    "sprint": "S3",
    "release": "R1",
@@ -315,14 +317,14 @@
    "deps": [
     "4.1"
    ],
-   "reqs": "NOT-002"
+   "reqs": "NOT-002",
+   "size": 3
   },
   {
    "id": "4.3",
    "epic": "E4",
    "type": "spike",
    "title": "Spike: invio su canale di messaggistica interno",
-   "estimate": 3,
    "status": "todo",
    "sprint": "S3",
    "release": "R2",
@@ -333,19 +335,18 @@
    "epic": "E5",
    "type": "story",
    "title": "Cruscotto di occupazione per sede",
-   "estimate": 8,
    "status": "todo",
    "sprint": "S4",
    "release": "R2",
    "assignee": "gr",
-   "reqs": "REP-001"
+   "reqs": "REP-001",
+   "size": 12
   },
   {
    "id": "5.2",
    "epic": "E5",
    "type": "story",
    "title": "Esportare l'occupazione mensile",
-   "estimate": 3,
    "status": "todo",
    "sprint": "S4",
    "release": "R2",
@@ -353,26 +354,26 @@
    "deps": [
     "5.1"
    ],
-   "reqs": "REP-002"
+   "reqs": "REP-002",
+   "size": 5
   },
   {
    "id": "5.3",
    "epic": "E5",
    "type": "story",
    "title": "Sale sotto-utilizzate: soglia configurabile",
-   "estimate": 5,
    "status": "todo",
    "sprint": "S4",
    "release": "R2",
    "assignee": "lf",
-   "reqs": "REP-003"
+   "reqs": "REP-003",
+   "size": 8
   },
   {
    "id": "5.4",
    "epic": "E5",
    "type": "bug",
    "title": "Correggere arrotondamento delle ore nel report",
-   "estimate": 1,
    "status": "todo",
    "sprint": "S4",
    "release": "R2",
@@ -383,36 +384,78 @@
    "epic": "E1",
    "type": "story",
    "title": "Importare le sale esistenti dal foglio di calcolo",
-   "estimate": 5,
    "status": "todo",
    "sprint": "S3",
    "release": "R1",
    "assignee": "lf",
-   "reqs": "PRE-004"
+   "reqs": "PRE-004",
+   "size": 9
   },
   {
    "id": "2.5",
    "epic": "E2",
    "type": "story",
    "title": "Prenotare per conto di un collega",
-   "estimate": 3,
    "status": "todo",
    "sprint": null,
    "release": "R2",
-   "assignee": null,
-   "reqs": "PRE-014"
+   "assignee": "pc",
+   "reqs": "PRE-014",
+   "size": 5
   },
   {
    "id": "3.4",
    "epic": "E3",
    "type": "story",
    "title": "Registro delle operazioni amministrative",
-   "estimate": 5,
    "status": "todo",
    "sprint": "S4",
    "release": "R2",
    "assignee": "pc",
-   "reqs": "SEC-003"
+   "reqs": "SEC-003",
+   "size": 8
   }
- ]
+ ],
+ "estimation": {
+  "rules": [
+   {
+    "id": "story",
+    "label": "Storie",
+    "per": "size",
+    "sizeLabel": "scenario di accettazione",
+    "value": 0.5,
+    "floor": 1,
+    "min": 0.2,
+    "max": 1,
+    "step": 0.05
+   },
+   {
+    "id": "task",
+    "label": "Attività",
+    "per": "item",
+    "value": 1,
+    "min": 0.5,
+    "max": 3,
+    "step": 0.5
+   },
+   {
+    "id": "spike",
+    "label": "Spike",
+    "per": "item",
+    "value": 2,
+    "min": 1,
+    "max": 5,
+    "step": 0.5
+   },
+   {
+    "id": "bug",
+    "label": "Bug",
+    "per": "item",
+    "value": 0.5,
+    "min": 0.5,
+    "max": 2,
+    "step": 0.5
+   }
+  ]
+ }
 }
