@@ -1,0 +1,418 @@
+{
+ "meta": {
+  "title": "Prenotazione Sale",
+  "project": "Portale prenotazione sale riunioni (esempio)",
+  "lang": "it",
+  "today": "2026-12-09",
+  "unit": "gg",
+  "sourceLink": "https://example.org/backlog",
+  "notes": [
+   "Esempio sintetico: persone, date e stime sono inventate."
+  ]
+ },
+ "releases": [
+  {
+   "id": "R1",
+   "name": "R1",
+   "date": "2026-12-31",
+   "desc": "Prenotazione di base"
+  },
+  {
+   "id": "R2",
+   "name": "R2",
+   "date": "2027-01-29",
+   "desc": "Reportistica e lista d'attesa"
+  }
+ ],
+ "sprints": [
+  {
+   "id": "S1",
+   "name": "Sprint 1",
+   "start": "2026-11-23",
+   "end": "2026-12-04",
+   "days": 10
+  },
+  {
+   "id": "S2",
+   "name": "Sprint 2",
+   "start": "2026-12-07",
+   "end": "2026-12-18",
+   "days": 9,
+   "note": "08/12 festivo"
+  },
+  {
+   "id": "S3",
+   "name": "Sprint 3",
+   "start": "2026-12-21",
+   "end": "2026-12-31",
+   "note": "Feste; chiude R1",
+   "days": 6
+  },
+  {
+   "id": "S4",
+   "name": "Sprint 4",
+   "start": "2027-01-11",
+   "end": "2027-01-22",
+   "days": 10
+  }
+ ],
+ "people": [
+  {
+   "id": "lf",
+   "name": "Laura Ferri",
+   "role": "Sviluppo",
+   "availability": 1
+  },
+  {
+   "id": "gr",
+   "name": "Giorgio Rizzo",
+   "role": "Sviluppo",
+   "availability": 1,
+   "sprintCapacity": {
+    "S3": 3
+   }
+  },
+  {
+   "id": "pc",
+   "name": "Paola Conti",
+   "role": "Sviluppo",
+   "availability": 1
+  },
+  {
+   "id": "mt",
+   "name": "Marco Testa",
+   "role": "Analisi e test",
+   "availability": 0.6
+  }
+ ],
+ "areas": [
+  {
+   "id": "core",
+   "name": "Prenotazioni"
+  },
+  {
+   "id": "platform",
+   "name": "Piattaforma"
+  },
+  {
+   "id": "insight",
+   "name": "Reportistica"
+  }
+ ],
+ "epics": [
+  {
+   "id": "E1",
+   "title": "Catalogo sale",
+   "area": "core",
+   "releases": [
+    "R1"
+   ],
+   "goal": "Le sedi pubblicano le sale con capienza e dotazioni e ne gestiscono la disponibilità."
+  },
+  {
+   "id": "E2",
+   "title": "Prenotazioni",
+   "area": "core",
+   "releases": [
+    "R1",
+    "R2"
+   ],
+   "goal": "I dipendenti prenotano, spostano e annullano una sala in pochi passi."
+  },
+  {
+   "id": "E3",
+   "title": "Accesso e ruoli",
+   "area": "platform",
+   "releases": [
+    "R1",
+    "R2"
+   ],
+   "goal": "Accesso con l'identità aziendale e permessi per ruolo."
+  },
+  {
+   "id": "E4",
+   "title": "Notifiche",
+   "area": "platform",
+   "releases": [
+    "R1",
+    "R2"
+   ],
+   "goal": "Conferme e promemoria arrivano a chi ha prenotato."
+  },
+  {
+   "id": "E5",
+   "title": "Occupazione",
+   "area": "insight",
+   "releases": [
+    "R2"
+   ],
+   "goal": "I responsabili vedono quanto e come vengono usate le sale."
+  }
+ ],
+ "items": [
+  {
+   "id": "1.1",
+   "epic": "E1",
+   "type": "story",
+   "title": "Registrare una sala con capienza e dotazioni",
+   "estimate": 5,
+   "status": "done",
+   "sprint": "S1",
+   "release": "R1",
+   "assignee": "lf",
+   "reqs": "PRE-001",
+   "desc": "Come Responsabile sedi, voglio registrare una sala con capienza e dotazioni, così che sia prenotabile."
+  },
+  {
+   "id": "1.2",
+   "epic": "E1",
+   "type": "story",
+   "title": "Consultare il calendario di una sala",
+   "estimate": 3,
+   "status": "done",
+   "sprint": "S1",
+   "release": "R1",
+   "assignee": "gr",
+   "reqs": "PRE-002"
+  },
+  {
+   "id": "1.3",
+   "epic": "E1",
+   "type": "story",
+   "title": "Bloccare una sala per manutenzione",
+   "estimate": 3,
+   "status": "active",
+   "sprint": "S2",
+   "release": "R1",
+   "assignee": "lf",
+   "deps": [
+    "1.1"
+   ],
+   "reqs": "PRE-003"
+  },
+  {
+   "id": "2.1",
+   "epic": "E2",
+   "type": "story",
+   "title": "Prenotare una sala per una fascia oraria",
+   "estimate": 8,
+   "status": "active",
+   "sprint": "S2",
+   "release": "R1",
+   "assignee": "gr",
+   "deps": [
+    "1.2"
+   ],
+   "reqs": "PRE-010"
+  },
+  {
+   "id": "2.2",
+   "epic": "E2",
+   "type": "story",
+   "title": "Annullare o spostare una prenotazione",
+   "estimate": 5,
+   "status": "todo",
+   "sprint": "S2",
+   "release": "R1",
+   "assignee": "pc",
+   "deps": [
+    "2.1"
+   ],
+   "reqs": "PRE-011"
+  },
+  {
+   "id": "2.3",
+   "epic": "E2",
+   "type": "story",
+   "title": "Prenotazioni ricorrenti settimanali",
+   "estimate": 8,
+   "status": "risk",
+   "sprint": "S3",
+   "release": "R1",
+   "assignee": "gr",
+   "deps": [
+    "2.1"
+   ],
+   "reqs": "PRE-012",
+   "desc": "Regole di ricorrenza ancora da chiarire con l'ufficio sedi."
+  },
+  {
+   "id": "2.4",
+   "epic": "E2",
+   "type": "story",
+   "title": "Lista d'attesa su sala occupata",
+   "estimate": null,
+   "status": "todo",
+   "sprint": null,
+   "release": "R2",
+   "assignee": null,
+   "reqs": "PRE-013"
+  },
+  {
+   "id": "3.1",
+   "epic": "E3",
+   "type": "story",
+   "title": "Accesso con l'identità aziendale",
+   "estimate": 5,
+   "status": "done",
+   "sprint": "S1",
+   "release": "R1",
+   "assignee": "pc",
+   "reqs": "SEC-001"
+  },
+  {
+   "id": "3.2",
+   "epic": "E3",
+   "type": "story",
+   "title": "Ruoli: dipendente, responsabile sedi, amministratore",
+   "estimate": 3,
+   "status": "active",
+   "sprint": "S2",
+   "release": "R1",
+   "assignee": "pc",
+   "deps": [
+    "3.1"
+   ],
+   "reqs": "SEC-002"
+  },
+  {
+   "id": "3.3",
+   "epic": "E3",
+   "type": "task",
+   "title": "Verificare il tracciato dell'anagrafica dipendenti",
+   "estimate": null,
+   "status": "blocked",
+   "sprint": "S2",
+   "release": "R1",
+   "assignee": "mt",
+   "desc": "In attesa del tracciato dall'ufficio personale."
+  },
+  {
+   "id": "4.1",
+   "epic": "E4",
+   "type": "story",
+   "title": "Notifica di conferma prenotazione",
+   "estimate": 3,
+   "status": "todo",
+   "sprint": "S3",
+   "release": "R1",
+   "assignee": "mt",
+   "deps": [
+    "2.1"
+   ],
+   "reqs": "NOT-001"
+  },
+  {
+   "id": "4.2",
+   "epic": "E4",
+   "type": "story",
+   "title": "Promemoria il giorno prima",
+   "estimate": 2,
+   "status": "todo",
+   "sprint": "S3",
+   "release": "R1",
+   "assignee": "mt",
+   "deps": [
+    "4.1"
+   ],
+   "reqs": "NOT-002"
+  },
+  {
+   "id": "4.3",
+   "epic": "E4",
+   "type": "spike",
+   "title": "Spike: invio su canale di messaggistica interno",
+   "estimate": 3,
+   "status": "todo",
+   "sprint": "S3",
+   "release": "R2",
+   "assignee": "pc"
+  },
+  {
+   "id": "5.1",
+   "epic": "E5",
+   "type": "story",
+   "title": "Cruscotto di occupazione per sede",
+   "estimate": 8,
+   "status": "todo",
+   "sprint": "S4",
+   "release": "R2",
+   "assignee": "gr",
+   "reqs": "REP-001"
+  },
+  {
+   "id": "5.2",
+   "epic": "E5",
+   "type": "story",
+   "title": "Esportare l'occupazione mensile",
+   "estimate": 3,
+   "status": "todo",
+   "sprint": "S4",
+   "release": "R2",
+   "assignee": "lf",
+   "deps": [
+    "5.1"
+   ],
+   "reqs": "REP-002"
+  },
+  {
+   "id": "5.3",
+   "epic": "E5",
+   "type": "story",
+   "title": "Sale sotto-utilizzate: soglia configurabile",
+   "estimate": 5,
+   "status": "todo",
+   "sprint": "S4",
+   "release": "R2",
+   "assignee": "lf",
+   "reqs": "REP-003"
+  },
+  {
+   "id": "5.4",
+   "epic": "E5",
+   "type": "bug",
+   "title": "Correggere arrotondamento delle ore nel report",
+   "estimate": 1,
+   "status": "todo",
+   "sprint": "S4",
+   "release": "R2",
+   "assignee": "mt"
+  },
+  {
+   "id": "1.4",
+   "epic": "E1",
+   "type": "story",
+   "title": "Importare le sale esistenti dal foglio di calcolo",
+   "estimate": 5,
+   "status": "todo",
+   "sprint": "S3",
+   "release": "R1",
+   "assignee": "lf",
+   "reqs": "PRE-004"
+  },
+  {
+   "id": "2.5",
+   "epic": "E2",
+   "type": "story",
+   "title": "Prenotare per conto di un collega",
+   "estimate": 3,
+   "status": "todo",
+   "sprint": null,
+   "release": "R2",
+   "assignee": null,
+   "reqs": "PRE-014"
+  },
+  {
+   "id": "3.4",
+   "epic": "E3",
+   "type": "story",
+   "title": "Registro delle operazioni amministrative",
+   "estimate": 5,
+   "status": "todo",
+   "sprint": "S4",
+   "release": "R2",
+   "assignee": "pc",
+   "reqs": "SEC-003"
+  }
+ ]
+}
