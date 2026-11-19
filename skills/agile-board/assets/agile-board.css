@@ -1,6 +1,8 @@
 /* agile-board.css: what only the agile board draws. Theme tokens only. */
 .ab-view { display: grid; gap: 12px; min-width: 0; }
 .ab-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ab-fgroup { margin: 4px 0 0 2px; }
+.ab-fgroup summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
 .ab-link { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 
 /* sprint columns */

@@ -13,7 +13,7 @@ list. Dates are `YYYY-MM-DD`. Unknown fields are kept and ignored.
 | `meta.lang` | `it` \| `en` | interface language, default `it` |
 | `meta.today` | date | the "today" line and what counts as completed so far |
 | `meta.unit` | `gg` \| `pt` | unit of estimates and capacity: working days (default) or story points |
-| `meta.sourceLink` | URL | link to the source document (backlog, epics file) |
+| `meta.sourceLink` | http(s) URL | link to the source document (backlog, epics file) |
 | `meta.notes` | string[] | short lines under the title (assumptions, caveats) |
 | `releases[]` | `{id, name, date?, desc?}` | a release line on the roadmap; fit check in Progress |
 | `sprints[]` **required** | `{id, name, start, end, days?, note?}` | in order. `days` = working days; default: weekdays from start to end |

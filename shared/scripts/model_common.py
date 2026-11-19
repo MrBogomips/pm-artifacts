@@ -64,6 +64,14 @@ def text(item: Dict[str, Any], field: str, loc: str, errors: List[str], required
         errors.append("%s: \"%s\" must be a non-empty string" % (loc, field))
 
 
+def texts(item: Dict[str, Any], fields: Iterable[str], loc: str, errors: List[str]) -> None:
+    """Optional free-text fields: each, when present, a string."""
+    for field in fields:
+        value = item.get(field)
+        if value is not None and not isinstance(value, str):
+            errors.append("%s: \"%s\" must be text, got %r" % (loc, field, value))
+
+
 def date(item: Dict[str, Any], field: str, loc: str, errors: List[str], required: bool = False) -> Optional[datetime.date]:
     """The parsed ISO date (YYYY-MM-DD) of a field, or None after reporting a problem."""
     value = item.get(field)
@@ -89,7 +97,9 @@ def ref(item: Dict[str, Any], field: str, known: Set[str], target: str, loc: str
         if required:
             errors.append("%s: \"%s\" is required" % (loc, field))
         return
-    if value not in known:
+    if not isinstance(value, str):
+        errors.append("%s: \"%s\" must be the id of a %s, got %r" % (loc, field, target, value))
+    elif value not in known:
         errors.append("%s: \"%s\" names %s \"%s\", which does not exist" % (loc, field, target, value))
 
 
@@ -102,7 +112,9 @@ def refs(item: Dict[str, Any], field: str, known: Set[str], target: str, loc: st
         errors.append("%s: \"%s\" must be a list" % (loc, field))
         return
     for v in value:
-        if v not in known:
+        if not isinstance(v, str):
+            errors.append("%s: \"%s\" must list %s ids, got %r" % (loc, field, target, v))
+        elif v not in known:
             errors.append("%s: \"%s\" names %s \"%s\", which does not exist" % (loc, field, target, v))
 
 

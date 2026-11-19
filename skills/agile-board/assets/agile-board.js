@@ -22,8 +22,8 @@
       findings: "Da decidere ({n})", goal: "Obiettivo", progress: "Avanzamento", none: "nessuno", openSource: "Apri la fonte",
       fOver: "{who} è sovrallocato in {sprint}: {load} pianificati per {cap} disponibili",
       fDepLate: "{a} dipende da {b}, pianificato in uno sprint successivo", fDepNone: "{a} dipende da {b}, che non è pianificato",
-      fSlip: "{a} è in {sprint}, che finisce dopo la release {rel}", fEst: "{n} elementi senza stima: {ids}",
-      cellTitle: "{who} · {sprint}", areas: "Aree",
+      fSlip: "{n} elementi della release {rel} sono in {sprint}, che finisce dopo la sua data: {ids}", fEst: "{n} elementi senza stima: {ids}",
+      cellTitle: "{who} · {sprint}", areas: "Aree", k_over: "Sovrallocazioni", k_dep: "Dipendenze", k_slip: "Fuori dalla data di release", k_est: "Stime mancanti",
       ty_story: "Storia", ty_task: "Attività", ty_bug: "Bug", ty_spike: "Spike",
       st_todo: "Da fare", st_active: "In corso", st_done: "Fatto", st_risk: "A rischio", st_blocked: "Bloccato", u_gg: "gg", u_pt: "pt" },
     en: { vSprint: "Sprints", vEpics: "Epics", vRoadmap: "Roadmap", vProgress: "Progress", vPeople: "Allocation",
@@ -41,8 +41,8 @@
       findings: "To decide ({n})", goal: "Goal", progress: "Progress", none: "none", openSource: "Open the source",
       fOver: "{who} is over capacity in {sprint}: {load} planned for {cap} available",
       fDepLate: "{a} depends on {b}, planned in a later sprint", fDepNone: "{a} depends on {b}, which is not planned",
-      fSlip: "{a} is in {sprint}, which ends after release {rel}", fEst: "{n} items without an estimate: {ids}",
-      cellTitle: "{who} · {sprint}", areas: "Areas",
+      fSlip: "{n} items of release {rel} are in {sprint}, which ends after its date: {ids}", fEst: "{n} items without an estimate: {ids}",
+      cellTitle: "{who} · {sprint}", areas: "Areas", k_over: "Over capacity", k_dep: "Dependencies", k_slip: "Past the release date", k_est: "Missing estimates",
       ty_story: "Story", ty_task: "Task", ty_bug: "Bug", ty_spike: "Spike",
       st_todo: "To do", st_active: "In progress", st_done: "Done", st_risk: "At risk", st_blocked: "Blocked", u_gg: "d", u_pt: "pt" },
   });
@@ -56,8 +56,8 @@
   function head(m) {
     const meta = m.meta;
     const sub = [meta.project && esc(meta.project), meta.today && `${t("today")}: ${PM.fmtDate(meta.today)}`,
-      meta.sourceLink && `<a href="${esc(meta.sourceLink)}" target="_blank" rel="noopener">${t("source")}</a>`].filter(Boolean).join(" · ");
-    const notes = (meta.notes || []).map((n) => `<p class="pm-sub">${esc(n)}</p>`).join("");
+      /^https?:\/\//i.test(meta.sourceLink || "") && `<a href="${esc(meta.sourceLink)}" target="_blank" rel="noopener">${t("source")}</a>`].filter(Boolean).join(" · ");
+    const notes = (Array.isArray(meta.notes) ? meta.notes : []).map((n) => `<p class="pm-sub">${esc(n)}</p>`).join("");
     return `<header class="pm-head"><div><h1>${esc(meta.title)}</h1><p class="pm-sub">${sub}</p>${notes}</div>` +
       `<div class="pm-actions" id="ab-actions">${PM.save.controls()}${PM.darkToggle()}</div></header>`;
   }
@@ -72,8 +72,10 @@
       { value: (m.people || []).length, label: t("people") },
       { value: m.items.filter((it) => !it.sprint).length, label: t("unplanned"), tone: m.items.some((it) => !it.sprint) ? "risk" : "" }]);
     const f = AB.findings(m);
-    const findings = f.length ? `<details class="pm-findings" open><summary>${t("findings", { n: f.length })}</summary><ul>${f.map((x) =>
-      `<li${x.item ? ` data-id="${esc(x.item)}" class="ab-link"` : x.person ? ` data-cell="${esc(x.person)}|${esc(x.sprint)}" class="ab-link"` : ""}>${esc(x.text)}</li>`).join("")}</ul></details>` : "";
+    const li = (x) => `<li${x.item ? ` data-id="${esc(x.item)}" class="ab-link"` : x.person ? ` data-cell="${esc(x.person)}|${esc(x.sprint)}" class="ab-link"` : ""}>${esc(x.text)}</li>`;
+    const groups = ["over", "dep", "slip", "est"].map((k) => [k, f.filter((x) => x.kind === k)]).filter(([, xs]) => xs.length);
+    const findings = f.length ? `<details class="pm-findings" open><summary>${t("findings", { n: f.length })}</summary>${groups.map(([k, xs]) =>
+      `<details class="ab-fgroup"${xs.length <= 4 ? " open" : ""}><summary>${t("k_" + k)} (${xs.length})</summary><ul>${xs.map(li).join("")}</ul></details>`).join("")}</details>` : "";
     return tiles + findings;
   }
 
@@ -170,7 +172,10 @@
     const drawer = el.closest(".pm-drawer");
     if (!key || !drawer || !drawer.dataset.item) return;
     let value = el.value === "" ? null : el.value;
-    if (key === "estimate" && value != null) { value = Number(value); if (!(value >= 0)) return; }
+    if (key === "estimate") {
+      if (value == null && el.validity && el.validity.badInput) return;   /* unparsable entry: keep the estimate */
+      if (value != null) { value = Number(value); if (!(value >= 0)) return; }
+    }
     updateItem(drawer.dataset.item, { [key]: value });
   });
 

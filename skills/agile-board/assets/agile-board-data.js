@@ -82,7 +82,7 @@
   }
 
   function findings(m) {
-    const ix = index(m), out = [], t = PM.t, L = loads(m);
+    const ix = index(m), out = [], t = PM.t, L = loads(m), slips = {};
     (m.people || []).forEach((p) => m.sprints.forEach((s) => {
       const c = capacity(m, p, s), v = L[p.id][s.id] || 0;
       if (c != null && v > c) out.push({ kind: "over", text: t("fOver", { who: p.name, sprint: s.name, load: PM.num(v), cap: PM.num(c) }), person: p.id, sprint: s.id });
@@ -96,8 +96,12 @@
         if (theirs == null || theirs > mine) out.push({ kind: "dep", text: t(theirs == null ? "fDepNone" : "fDepLate", { a: it.id, b: d }), item: it.id });
       });
       const r = ix.releases[it.release];
-      if (r && r.date && ix.sprints[it.sprint].end > r.date) out.push({ kind: "slip", text: t("fSlip", { a: it.id, sprint: ix.sprints[it.sprint].name, rel: r.name }), item: it.id });
+      if (r && r.date && ix.sprints[it.sprint].end > r.date) {
+        const key = r.id + "|" + it.sprint;
+        (slips[key] = slips[key] || { rel: r, sprint: ix.sprints[it.sprint], ids: [] }).ids.push(it.id);
+      }
     });
+    Object.values(slips).forEach((g) => out.push({ kind: "slip", text: t("fSlip", { n: g.ids.length, ids: g.ids.join(", "), sprint: g.sprint.name, rel: g.rel.name }) }));
     const missing = m.items.filter((it) => it.estimate == null && it.status !== "done").map((it) => it.id);
     if (missing.length) out.push({ kind: "est", text: t("fEst", { n: missing.length, ids: missing.join(", ") }) });
     return out;

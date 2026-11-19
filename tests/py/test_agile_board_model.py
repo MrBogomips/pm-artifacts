@@ -114,6 +114,23 @@ class Errors(unittest.TestCase):
     def test_sprint_capacity_names_unknown_sprint(self):
         self.assertError(model(a=lambda m: m["people"][0].update(sprintCapacity={"S9": 3})), "sprint \"S9\"")
 
+    def test_wrong_reference_types_are_reported(self):
+        for change, fragment in ((lambda m: item(m, "1.1").update(sprint=["S1"]), "\"sprint\""),
+                                 (lambda m: item(m, "1.1").update(epic={}), "\"epic\""),
+                                 (lambda m: m["epics"][0].update(area=["a"]), "\"area\""),
+                                 (lambda m: item(m, "1.1").update(deps=[["a"]]), "\"deps\""),
+                                 (lambda m: item(m, "1.1").update(deps=5), "\"deps\"")):
+            self.assertError(model(a=change), fragment)
+
+    def test_source_link_must_be_http(self):
+        self.assertError(model(a=lambda m: m["meta"].update(sourceLink="javascript:alert(1)")), "sourceLink")
+
+    def test_notes_must_be_strings(self):
+        self.assertError(model(a=lambda m: m["meta"].update(notes="hello")), "notes")
+
+    def test_free_text_must_be_text(self):
+        self.assertError(model(a=lambda m: item(m, "1.1").update(desc=5)), "\"desc\"")
+
     def test_sprints_required(self):
         self.assertError(model(a=lambda m: m.update(sprints=[])), "\"sprints\"")
 
@@ -135,7 +152,13 @@ class Warnings(unittest.TestCase):
         self.assertWarning(model(a=lambda m: item(m, "1.1").update(sprint="S4")), "depends on 1.1")
 
     def test_release_slip(self):
-        self.assertWarning(model(a=lambda m: item(m, "1.3").update(sprint="S4")), "after release R1")
+        self.assertWarning(model(a=lambda m: item(m, "1.3").update(sprint="S4")), "of release R1 are planned in Sprint 4")
+
+    def test_null_availability_and_unit_mean_defaults(self):
+        m = model(a=lambda m: m["people"][0].update(availability=None), b=lambda m: m["meta"].update(unit=None))
+        self.assertEqual(V.validate(m), [])
+        self.assertEqual(V.capacities(m)["lf"]["S1"], 10)
+        self.assertTrue(any("Giorgio Rizzo" in w for w in V.warnings(m)))
 
     def test_capacity_from_days_and_availability(self):
         caps = V.capacities(BASE)

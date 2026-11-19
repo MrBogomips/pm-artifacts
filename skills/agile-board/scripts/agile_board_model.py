@@ -13,6 +13,7 @@ The model format is in ../references/model.md.
 import datetime
 import json
 import os
+import re
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -33,6 +34,13 @@ def _meta(model: Dict[str, Any], errors: List[str]) -> None:
     mc.enum(meta, "lang", mc.LANGS, "meta", errors)
     mc.enum(meta, "unit", UNITS, "meta", errors)
     mc.date(meta, "today", "meta", errors)
+    mc.texts(meta, ("project",), "meta", errors)
+    link = meta.get("sourceLink")
+    if link is not None and not (isinstance(link, str) and re.match(r"^https?://", link)):
+        errors.append("meta: \"sourceLink\" must be an http(s) URL, got %r" % (link,))
+    notes = meta.get("notes")
+    if notes is not None and not (isinstance(notes, list) and all(isinstance(n, str) for n in notes)):
+        errors.append("meta: \"notes\" must be a list of strings")
 
 
 def _sprints(sprints: List[Dict[str, Any]], errors: List[str]) -> None:
@@ -44,6 +52,7 @@ def _sprints(sprints: List[Dict[str, Any]], errors: List[str]) -> None:
         if start and end and end < start:
             errors.append("%s: the sprint ends before it starts" % loc)
         mc.number(s, "days", loc, errors)
+        mc.texts(s, ("note",), loc, errors)
 
 
 def _people(people: List[Dict[str, Any]], sprint_ids: set, errors: List[str]) -> None:
@@ -51,6 +60,7 @@ def _people(people: List[Dict[str, Any]], sprint_ids: set, errors: List[str]) ->
         loc = mc.where("people", p, i)
         mc.text(p, "name", loc, errors, required=True)
         mc.number(p, "capacity", loc, errors)
+        mc.texts(p, ("role",), loc, errors)
         av = p.get("availability")
         if av is not None and (isinstance(av, bool) or not isinstance(av, (int, float)) or not 0 <= av <= 1):
             errors.append("%s: \"availability\" must be a number from 0 to 1, got %r" % (loc, av))
@@ -75,7 +85,8 @@ def _items(model: Dict[str, Any], ids: Dict[str, set], errors: List[str]) -> Non
         mc.ref(it, "release", ids["releases"], "release", loc, errors)
         mc.ref(it, "assignee", ids["people"], "person", loc, errors)
         mc.refs(it, "deps", ids["items"], "item", loc, errors)
-        if it.get("id") in (it.get("deps") or []):
+        mc.texts(it, ("desc", "reqs"), loc, errors)
+        if isinstance(it.get("deps"), list) and it.get("id") in it["deps"]:
             errors.append("%s: the item depends on itself" % loc)
         mc.enum(it, "type", TYPES, loc, errors)
         mc.enum(it, "status", STATUSES, loc, errors)
@@ -102,6 +113,7 @@ def validate(model: Any) -> List[str]:
     for i, r in enumerate(work["_releases"]):
         mc.text(r, "name", mc.where("releases", r, i), errors, required=True)
         mc.date(r, "date", mc.where("releases", r, i), errors)
+        mc.texts(r, ("desc",), mc.where("releases", r, i), errors)
     _sprints(work["_sprints"], errors)
     _people(work["_people"], ids["sprints"], errors)
     for i, a in enumerate(work["_areas"]):
@@ -111,6 +123,7 @@ def validate(model: Any) -> List[str]:
         mc.text(e, "title", loc, errors, required=True)
         mc.ref(e, "area", ids["areas"], "area", loc, errors)
         mc.refs(e, "releases", ids["releases"], "release", loc, errors)
+        mc.texts(e, ("goal", "reqs"), loc, errors)
     _items(work, ids, errors)
     return errors
 
@@ -134,7 +147,7 @@ def sprint_days(sprint: Dict[str, Any]) -> float:
 
 def capacities(model: Dict[str, Any]) -> Dict[str, Dict[str, Optional[float]]]:
     """Capacity of each person in each sprint: sprintCapacity, else capacity, else (unit gg) days x availability."""
-    unit = (model.get("meta") or {}).get("unit", "gg")
+    unit = (model.get("meta") or {}).get("unit") or "gg"
     out: Dict[str, Dict[str, Optional[float]]] = {}
     for p in model.get("people") or []:
         row: Dict[str, Optional[float]] = {}
@@ -145,7 +158,8 @@ def capacities(model: Dict[str, Any]) -> Dict[str, Dict[str, Optional[float]]]:
             elif p.get("capacity") is not None:
                 row[s["id"]] = p["capacity"]
             elif unit == "gg":
-                row[s["id"]] = round(sprint_days(s) * p.get("availability", 1), 2)
+                avail = p.get("availability")
+                row[s["id"]] = round(sprint_days(s) * (1 if avail is None else avail), 2)
             else:
                 row[s["id"]] = None
         out[p["id"]] = row
@@ -187,14 +201,17 @@ def _dependencies(model: Dict[str, Any]) -> List[str]:
 
 
 def _release_slips(model: Dict[str, Any]) -> List[str]:
+    """One line per release and sprint: the items planned in a sprint that ends after the release date."""
     rel = {r["id"]: r for r in model.get("releases") or [] if r.get("date")}
     sprints = {s["id"]: s for s in model["sprints"]}
-    out = []
+    groups: Dict[tuple, List[str]] = {}
     for it in model["items"]:
         r, s = rel.get(it.get("release")), sprints.get(it.get("sprint"))
         if r and s and _iso(s["end"]) > _iso(r["date"]):
-            out.append("%s is planned in %s, which ends after release %s (%s)" % (it["id"], s["name"], r["name"], r["date"]))
-    return out
+            groups.setdefault((r["id"], s["id"]), []).append(it["id"])
+    return ["%d item(s) of release %s are planned in %s, which ends after %s: %s"
+            % (len(ids), rel[rid]["name"], sprints[sid]["name"], rel[rid]["date"], ", ".join(ids))
+            for (rid, sid), ids in groups.items()]
 
 
 def warnings(model: Dict[str, Any]) -> List[str]:
