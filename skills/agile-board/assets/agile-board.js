@@ -166,12 +166,23 @@
     renderLive();
   }
 
+  /* Pin every planned item where the plan puts it now; planning stays automatic, so a long item keeps
+     spilling over the sprints it uses and new items still queue after the pinned ones. */
   function freezePlan() {
-    const em = eff(), planned = Object.fromEntries(em.items.map((it) => [it.id, it.sprint || null]));
+    const planned = Object.fromEntries(eff().items.map((it) => [it.id, it.sprint || null]));
     const m = PM.model;
-    PM.save.change({ ...m, meta: { ...m.meta, planning: "manual" },
-      items: m.items.map((it) => { const { pinned, ...rest } = it; return { ...rest, sprint: planned[it.id] }; }) });
+    PM.save.change({ ...m, items: m.items.map((it) => (it.status === "done" || !planned[it.id] ? it : { ...it, sprint: planned[it.id], pinned: true })) });
     render();
+  }
+
+  /* Starting to edit: what-if values become the model's rules, so what is saved is what is shown. */
+  function adoptOverrides() {
+    const ids = Object.keys(st.ov);
+    if (!ids.length) return;
+    const m = PM.model;
+    const rules = m.estimation.rules.map((r) => (st.ov[r.id] != null ? { ...r, value: st.ov[r.id] } : r));
+    st.ov = {};
+    PM.save.change({ ...m, estimation: { ...m.estimation, rules } });
   }
 
   function editValue(el, key) {
@@ -188,7 +199,7 @@
     const el = ev.target;
     if (el.id === "ab-rel") { st.release = el.value; renderView(); return; }
     if (el.id === "ab-person") { st.person = el.value; renderView(); return; }
-    if (el.dataset && el.dataset.rule) { setRule(el.dataset.rule, Number(el.value)); if (PM.save.isEditing()) render(); return; }
+    if (el.dataset && el.dataset.rule) { if (PM.save.isEditing()) setRule(el.dataset.rule, Number(el.value)); return; }   /* renderLive keeps the slider focused */
     const key = el.dataset && el.dataset.edit;
     const drawer = el.closest(".pm-drawer");
     if (!key || !drawer || !drawer.dataset.item) return;
@@ -207,7 +218,10 @@
   document.addEventListener("input", (ev) => {
     const el = ev.target;
     if (el.id === "ab-q") { st.q = el.value.trim().toLowerCase(); renderView(); return; }
-    if (el.dataset && el.dataset.rule && !PM.save.isEditing()) setRule(el.dataset.rule, Number(el.value));   /* live what-if */
+    if (el.dataset && el.dataset.rule) {
+      if (PM.save.isEditing()) { const out = document.getElementById("ab-rv-" + el.dataset.rule); if (out) out.textContent = `${num(Number(el.value))} ${V.unit()}`; }
+      else setRule(el.dataset.rule, Number(el.value));   /* live what-if; while editing the change event saves it */
+    }
   });
 
   document.addEventListener("click", (ev) => {
@@ -261,7 +275,10 @@
     const box = document.getElementById("ab-actions");
     if (box) box.innerHTML = PM.save.controls() + PM.darkToggle();
     const view = document.getElementById("ab-view");
-    if (view && view.classList.contains("editing") !== PM.save.isEditing()) render();
+    if (view && view.classList.contains("editing") !== PM.save.isEditing()) {
+      if (PM.save.isEditing()) adoptOverrides();
+      render();
+    }
   });
 
   render();

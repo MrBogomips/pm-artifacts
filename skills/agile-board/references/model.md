@@ -57,14 +57,16 @@ are a what-if for every viewer; while editing, a change is saved into the rule.
 
 With `meta.planning: "auto"` the page computes the sprints, again at every slider change:
 
-1. Items `done`, `active` or `pinned` keep their sprint and use capacity first.
-2. Every other item with an assignee and an estimate, in list order with its `deps` first, takes its
-   assignee's next free capacity, never before its deps finish nor its `notBefore` (or its release's).
-   A long item spills into the following sprints.
+1. `done` items stay where they happened. `active` and `pinned` items start in their sprint, use
+   capacity first and spill into the next sprints when they do not fit.
+2. Every other item with an assignee and an estimate, in list order with its `deps` first, queues
+   after its assignee's previous item, never before its deps finish (never at all if a dep is not
+   planned) nor its `notBefore` (or its release's). A long item spills into the following sprints.
 3. What does not fit before the last sprint ends goes outside sprints, as do unassigned items.
 
-The PM can drag a card to pin it, and "Freeze the plan" writes the computed sprints into the model
-and switches to `manual`. The validator does not repeat the schedule: with `auto` its warnings say so.
+The PM can drag a card to pin it, and "Freeze the plan" pins every planned item to the sprint where
+it starts (planning stays `auto`, so long items keep their spill). Release verdicts and findings use
+the sprint where an item finishes. The validator does not repeat the schedule: with `auto` its warnings say so.
 
 ## What the validator says
 

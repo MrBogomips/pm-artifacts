@@ -1,10 +1,11 @@
 /* agile-board-plan.js: estimates and planning, pure functions of a model.
    Estimate used: the item's explicit `estimate`, else its rule (`kind`, else `type`): a fixed value
    per item, or `size` x value with a floor. Overrides (the page's sliders) replace rule values.
-   Planning `manual`: sprints as written. Planning `auto`: done, active and pinned items keep their
-   sprint and use capacity first; every other assigned and estimated item goes, in backlog order
-   with its dependencies first, into its assignee's next free capacity, starting no earlier than its
-   dependencies' finish and its own or its release's `notBefore` sprint, and spilling over sprint
+   Planning `manual`: sprints as written. Planning `auto`: done items stay where they happened;
+   active and pinned items start in their sprint and use capacity first; every other assigned and
+   estimated item queues, in backlog order with its dependencies first, after its assignee's previous
+   item, no earlier than its dependencies' finish (never, if one is not planned) and its own or its
+   release's `notBefore` sprint, spilling over sprint
    ends (_spans lists the sprints it uses). What does not fit before the last sprint ends is marked
    _beyond and has no sprint. */
 (function () {
@@ -62,34 +63,57 @@
     const cap = (pid, i) => AB.capacity(m, people[pid], sprints[i]) || 0;
     const fixed = (it) => it.sprint && idx[it.sprint] != null && (it.pinned || it.status === "done" || it.status === "active");
     const finish = {}, cursor = {};
-    items.forEach((it) => {
-      if (fixed(it)) {
-        finish[it.id] = idx[it.sprint];
-        if (it.estimate != null) add(used, it.assignee || "", it.sprint, it.estimate);
-      }
-    });
-    topoOrder(items).forEach((it) => {
-      if (fixed(it)) return;
-      it.sprint = null;
-      if (!it.assignee || !people[it.assignee] || it.estimate == null) return;
-      const nb = it.notBefore || (releases[it.release] || {}).notBefore;
-      let s = Math.max(cursor[it.assignee] || 0, nb && idx[nb] != null ? idx[nb] : 0,
-        ...(it.deps || []).map((d) => (finish[d] == null ? 0 : finish[d])));
+
+    /* Consume a person's free capacity from sprint index s on; returns the index where it ended. */
+    function fill(it, s) {
       let rem = it.estimate, first = null;
       it._spans = [];
-      if (rem <= EPS && s < n) first = s;
+      if (rem <= EPS && s < n) { first = s; it._spans.push(sprints[s].id); }
       while (rem > EPS && s < n) {
         const free = round2(cap(it.assignee, s) - (used[it.assignee][sprints[s].id] || 0));
         const take = Math.min(free, rem);
         if (take > EPS) { add(used, it.assignee, sprints[s].id, take); rem = round2(rem - take); if (first == null) first = s; it._spans.push(sprints[s].id); }
         if (rem > EPS) s++;
       }
-      it.sprint = first == null ? null : sprints[first].id;
       it._beyond = rem > EPS;
-      finish[it.id] = it._beyond ? n : s;
-      cursor[it.assignee] = Math.min(s, n);
+      return { first, end: it._beyond ? n : s };
+    }
+
+    /* 1. What is fixed: done work stays where it happened; active and pinned work starts in its sprint and spills. */
+    items.forEach((it) => {
+      if (it.status === "done") {
+        finish[it.id] = 0;
+        if (fixed(it) && it.estimate != null) add(used, it.assignee || "", it.sprint, it.estimate);
+        if (!fixed(it)) it.sprint = it.sprint && idx[it.sprint] != null ? it.sprint : null;
+        return;
+      }
+      if (!fixed(it)) return;
+      if (it.estimate == null || !people[it.assignee]) {
+        finish[it.id] = idx[it.sprint];
+        if (it.estimate != null) add(used, it.assignee || "", it.sprint, it.estimate);
+        return;
+      }
+      finish[it.id] = fill(it, idx[it.sprint]).end;
+    });
+
+    /* 2. Everything else, dependencies first, queued on its assignee after the previous item. */
+    topoOrder(items).forEach((it) => {
+      if (it.status === "done" || fixed(it)) return;
+      it.sprint = null;
+      if (!it.assignee || !people[it.assignee] || it.estimate == null) { finish[it.id] = n; return; }   /* never finishes */
+      const nb = it.notBefore || (releases[it.release] || {}).notBefore;
+      const start = Math.max(cursor[it.assignee] || 0, nb && idx[nb] != null ? idx[nb] : 0,
+        ...(it.deps || []).map((d) => (finish[d] == null ? 0 : finish[d])));
+      const r = fill(it, start);
+      it.sprint = r.first == null ? null : sprints[r.first].id;
+      if (r.first == null) it._beyond = true;
+      finish[it.id] = r.end;
+      if (r.first != null) cursor[it.assignee] = Math.min(r.end, n);   /* an item that never started holds no one up */
     });
   }
+
+  /* The last sprint an item uses: where it finishes. */
+  const lastSprint = (it) => (it._spans && it._spans.length ? it._spans[it._spans.length - 1] : it.sprint);
 
   function plan(m, overrides) {
     const rs = rules(m, overrides);
@@ -110,5 +134,5 @@
     return { ...m, items: p.items, _plan: p };
   }
 
-  Object.assign(AB, { rules, estimateOf, plan, effective });
+  Object.assign(AB, { rules, estimateOf, plan, effective, lastSprint });
 })();

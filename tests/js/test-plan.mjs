@@ -126,3 +126,41 @@ test("manual: sprints are kept, load is the sum of estimates", () => {
   assert.equal(byId(plan).i1.sprint, "S1");
   assert.equal(plan.used.a.S1, 7);
 });
+
+test("auto: a done item without a sprint is not scheduled and uses no capacity", () => {
+  const m = base();
+  m.items = [item("old", { estimate: 5, assignee: "a", status: "done" }), item("x", { estimate: 1, assignee: "a" })];
+  const plan = AB.plan(m), p = byId(plan);
+  assert.equal(p.old.sprint, null);
+  assert.equal(p.x.sprint, "S1");
+  assert.equal(plan.used.a.S1, 1);
+});
+
+test("auto: a pinned item spills from its sprint instead of overloading it", () => {
+  const m = base();
+  m.items = [item("pin", { estimate: 8, assignee: "a", sprint: "S1", pinned: true })];
+  const plan = AB.plan(m);
+  assert.equal(plan.used.a.S1, 5);
+  assert.equal(plan.used.a.S2, 3);
+  assert.deepEqual([...byId(plan).pin._spans], ["S1", "S2"]);
+});
+
+test("auto: an item whose dependency is not planned is not planned either", () => {
+  const m = base();
+  m.items = [item("dep", { estimate: 1 }), item("x", { estimate: 1, assignee: "a", deps: ["dep"] }),
+    item("ok", { estimate: 1, assignee: "a", deps: ["fin"] }), item("fin", { estimate: 1, status: "done" })];
+  const p = byId(AB.plan(m));
+  assert.equal(p.x.sprint, null);
+  assert.equal(p.ok.sprint, "S1");        // a done dependency counts as finished
+});
+
+test("release fit counts the last sprint an item uses", () => {
+  const m = base();
+  m.items = [item("big", { estimate: 8, assignee: "a", release: "R1" })];
+  m.releases[0].date = "2026-01-09";      // end of S1
+  const em = AB.effective(m);
+  const f = AB.releaseFit(em, em.releases[0]);
+  assert.equal(f.fits, false);
+  assert.equal(f.late.length, 1);
+  assert.ok(AB.findings(em).some((x) => x.kind === "slip"));
+});
