@@ -1,0 +1,159 @@
+/* Copied from eng-artifacts (shared/themes/default.css): the two plugins share one token set so their
+   pages look like one family. Keep the two copies aligned; tests/validate-themes.sh checks the tokens. */
+/* Default theme of the artifacts plugin.
+   Pale header bands on plain white nodes, a tinted zone per group, grey ink and connectors on a cool
+   grey ground, rose for what is under discussion. System fonts only: nothing is requested when a
+   page opens.
+   A theme is this set of tokens and nothing else: every token, in light and in dark.
+   Shape: light values on :root, then the dark values twice, once for the system preference and once
+   for an explicit choice, so a page's light/dark toggle (data-theme on the root element) wins both
+   ways. The two dark blocks must stay identical. A value that is not a color (a length, a mix, an
+   opacity) has one value for both modes and lives in the light block only.
+   Fonts: the three font tokens name system stacks. A theme that wants web fonts opens with one
+   Google Fonts import (see alt.css) and names the families it loads. */
+
+:root {
+  /* Surfaces */
+  --canvas:        #f5f6f8; /* page ground */
+  --surface:       #ffffff; /* panels: the drawing frame, the page head, the cards */
+  --node:          #ffffff; /* node body */
+
+  /* Ink */
+  --ink:           #1f2933; /* text, primary */
+  --ink-2:         #5f6874; /* text, secondary */
+  --line:          #4f5966; /* connectors, neutral borders */
+  --grid:          #d7dbe1; /* gridlines, hairlines, row separators */
+  --neutral:       #6b7280; /* a node outside every group, in a diagram that has groups */
+
+  /* Emphasis */
+  --accent:        #2563eb; /* a node of a diagram that defines no groups; the toggle when on */
+  --mark:          #e11d48; /* critical path, milestone, today, the element under discussion */
+  --band-ink:      #1f2933; /* text on a header band */
+
+  /* Status */
+  --status-done:   #047857;
+  --status-active: #2563eb;
+  --status-risk:   #b45309;
+  --status-late:   #dc2626;
+  --status-todo:   #6b7280;
+
+  /* Groups: workstream, lane, bounded context, schema area */
+  --group-1:       #2563eb;
+  --group-2:       #047857;
+  --group-3:       #c2410c;
+  --group-4:       #7c3aed;
+  --group-5:       #a16207;
+
+  /* Keys: the text of a chip; its ground is this color mixed into the node */
+  --key-primary:   #854d0e;
+  --key-foreign:   #5b21b6;
+  --key-unique:    #0e6a80;
+  --key-stereotype: #9d1a7e; /* UML stereotype chip */
+
+  /* Type */
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-data: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Geometry */
+  --radius: 8px;         /* node corners */
+  --stroke: 1.5px;       /* node outlines, connectors */
+  --arrowhead: 8px;      /* length of a connector's head; the unit of a drawing's spacing */
+  --panel-radius: 10px;  /* the frame around a drawing, the cards */
+  --zone-radius: 16px;   /* corners of a zone */
+
+  /* Treatment: how much of a node's group color goes into each part of it */
+  --fill-mix: 0%;        /* node body */
+  --stroke-mix: 100%;    /* node outline */
+  --band-mix: 20%;       /* header band */
+  --bar-mix: 30%;        /* unfinished part of a schedule bar */
+  --lane-mix: 15%;       /* lane header */
+  --zone-mix: 6%;        /* the ground of a zone */
+  --chip-mix: 16%;       /* the ground of a chip */
+  --highlight-mix: 12%;  /* the ground of a highlighted row */
+  --dim: 0.3;            /* opacity of what is not highlighted */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Surfaces */
+    --canvas:        #0e1217; /* page ground */
+    --surface:       #161b22; /* panels: the drawing frame, the page head, the cards */
+    --node:          #1a2028; /* node body */
+
+    /* Ink */
+    --ink:           #e5e8ec; /* text, primary */
+    --ink-2:         #98a1ac; /* text, secondary */
+    --line:          #a7b0bb; /* connectors, neutral borders */
+    --grid:          #2d3540; /* gridlines, hairlines, row separators */
+    --neutral:       #9ca3af; /* a node outside every group, in a diagram that has groups */
+
+    /* Emphasis */
+    --accent:        #6aa8fb; /* a node of a diagram that defines no groups; the toggle when on */
+    --mark:          #fb7185; /* critical path, milestone, today, the element under discussion */
+    --band-ink:      #e5e8ec; /* text on a header band */
+
+    /* Status */
+    --status-done:   #3fd39d;
+    --status-active: #6aa8fb;
+    --status-risk:   #fbbf24;
+    --status-late:   #f87171;
+    --status-todo:   #9ca3af;
+
+    /* Groups: workstream, lane, bounded context, schema area */
+    --group-1:       #6aa8fb;
+    --group-2:       #3fd39d;
+    --group-3:       #fb9a52;
+    --group-4:       #b39dfa;
+    --group-5:       #e0b866;
+
+    /* Keys: the text of a chip; its ground is this color mixed into the node */
+    --key-primary:   #fcd34d;
+    --key-foreign:   #c9bbfd;
+    --key-unique:    #6ee7f9;
+    --key-stereotype: #ee9fd8; /* UML stereotype chip */
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  /* Surfaces */
+  --canvas:        #0e1217; /* page ground */
+  --surface:       #161b22; /* panels: the drawing frame, the page head, the cards */
+  --node:          #1a2028; /* node body */
+
+  /* Ink */
+  --ink:           #e5e8ec; /* text, primary */
+  --ink-2:         #98a1ac; /* text, secondary */
+  --line:          #a7b0bb; /* connectors, neutral borders */
+  --grid:          #2d3540; /* gridlines, hairlines, row separators */
+  --neutral:       #9ca3af; /* a node outside every group, in a diagram that has groups */
+
+  /* Emphasis */
+  --accent:        #6aa8fb; /* a node of a diagram that defines no groups; the toggle when on */
+  --mark:          #fb7185; /* critical path, milestone, today, the element under discussion */
+  --band-ink:      #e5e8ec; /* text on a header band */
+
+  /* Status */
+  --status-done:   #3fd39d;
+  --status-active: #6aa8fb;
+  --status-risk:   #fbbf24;
+  --status-late:   #f87171;
+  --status-todo:   #9ca3af;
+
+  /* Groups: workstream, lane, bounded context, schema area */
+  --group-1:       #6aa8fb;
+  --group-2:       #3fd39d;
+  --group-3:       #fb9a52;
+  --group-4:       #b39dfa;
+  --group-5:       #e0b866;
+
+  /* Keys: the text of a chip; its ground is this color mixed into the node */
+  --key-primary:   #fcd34d;
+  --key-foreign:   #c9bbfd;
+  --key-unique:    #6ee7f9;
+  --key-stereotype: #ee9fd8; /* UML stereotype chip */
+
+  color-scheme: dark;
+}

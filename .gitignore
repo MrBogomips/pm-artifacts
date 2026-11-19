@@ -1,0 +1,12 @@
+# Generated pages (samples rendered for review, local previews)
+out/
+
+# OS files
+.DS_Store
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Reference material with client data, kept locally for design support only (never committed)
+_reference/

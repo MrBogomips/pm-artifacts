@@ -1,0 +1,26 @@
+{
+  "name": "pm-artifacts",
+  "owner": {
+    "name": "MrBogomips",
+    "url": "https://github.com/MrBogomips"
+  },
+  "metadata": {
+    "description": "Marketplace for the pm-artifacts Claude Code plugin"
+  },
+  "plugins": [
+    {
+      "name": "pm-artifacts",
+      "source": "./",
+      "description": "Decision boards for project managers (an agile board with sprints, roadmap, progress, epics, stories and allocations so far) as self-contained pages, editable once published as an artifact.",
+      "version": "0.1.0",
+      "category": "productivity",
+      "tags": [
+        "project-management",
+        "agile",
+        "board",
+        "roadmap",
+        "allocation"
+      ]
+    }
+  ]
+}
